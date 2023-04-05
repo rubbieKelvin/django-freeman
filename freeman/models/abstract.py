@@ -76,7 +76,7 @@ class AbstractSharedModel(models.Model):
             AbstractSharedModel: An instance of the subclass that matches the given query.
         """
 
-        res = cls.all().filter(where).first()
+        res = cls.all().get(where)
         if not res:
             raise cls.DoesNotExist
         return res
