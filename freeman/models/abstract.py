@@ -5,8 +5,10 @@ from .types import PartialUpdateType
 from django.db import models, transaction
 from freeman.utils.dsa import DotDict
 
+T = typing.TypeVar("T", bound="AbstractSharedModel")
 
-class AbstractSharedModel(models.Model):
+
+class AbstractSharedModel(models.Model, typing.Generic[T]):
     id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
     last_updated = models.DateTimeField(auto_now_add=True, editable=False)
@@ -35,7 +37,7 @@ class AbstractSharedModel(models.Model):
         raise NotImplementedError
 
     @classmethod
-    def all(cls) -> models.QuerySet["AbstractSharedModel"]:
+    def all(cls) -> models.BaseManager["AbstractSharedModel"[T]]:
         """
         Retrieves all instances of the subclass.
 
@@ -45,7 +47,7 @@ class AbstractSharedModel(models.Model):
         return cls.objects.all()
 
     @classmethod
-    def findOneByPk(cls, pk: Pk) -> "AbstractSharedModel":
+    def findOneByPk(cls, pk: Pk) -> "AbstractSharedModel"[T]:
         """
         Retrieves a single instance of the subclass by primary key.
 
@@ -62,7 +64,7 @@ class AbstractSharedModel(models.Model):
         return cls.all().get(pk=pk)
 
     @classmethod
-    def findOneWhere(cls, where: models.Q) -> "AbstractSharedModel":
+    def findOneWhere(cls, where: models.Q) -> "AbstractSharedModel"[T]:
         """
         Retrieves a single instance of the subclass that matches the given query.
 
@@ -81,7 +83,7 @@ class AbstractSharedModel(models.Model):
     @classmethod
     def findMany(
         cls, where: models.Q, limit: int | None = None, page: int = 0
-    ) -> models.QuerySet["AbstractSharedModel"]:
+    ) -> models.BaseManager["AbstractSharedModel"[T]]:
         """
         Retrieves multiple instances of the subclass that match the given query.
 
@@ -101,7 +103,9 @@ class AbstractSharedModel(models.Model):
         return res
 
     @classmethod
-    def insertSingle(cls, objectData: dict[str, typing.Any]) -> "AbstractSharedModel":
+    def insertSingle(
+        cls, objectData: dict[str, typing.Any]
+    ) -> "AbstractSharedModel"[T]:
         """
         Inserts a single object into the database table.
 
@@ -118,7 +122,7 @@ class AbstractSharedModel(models.Model):
     @classmethod
     def insertMany(
         cls, objects: list[dict[str, typing.Any]]
-    ) -> list["AbstractSharedModel"]:
+    ) -> list["AbstractSharedModel"[T]]:
         """
         Inserts multiple objects into the database table.
 
@@ -133,7 +137,7 @@ class AbstractSharedModel(models.Model):
         return cls.objects.bulk_create(instances)
 
     @classmethod
-    def updateOne(cls, pk: Pk, _set: dict[str, typing.Any]) -> "AbstractSharedModel":
+    def updateOne(cls, pk: Pk, _set: dict[str, typing.Any]) -> "AbstractSharedModel"[T]:
         """
         Updates a single instance of the subclass that matches the given primary key with the specified fields.
 
@@ -178,9 +182,7 @@ class AbstractSharedModel(models.Model):
         return cls.objects.filter(where).update(**_set)
 
     @classmethod
-    def updateMany(
-        cls, objects: list[PartialUpdateType]
-    ) -> list["AbstractSharedModel"]:
+    def updateMany(cls, objects: list[PartialUpdateType]) -> list[T]:
         """Updates multiple objects with new values atomically. If one of the updates fail, all updates are rolled back.
 
         Args:
