@@ -1,14 +1,20 @@
-[build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
-
-[project]
-name = "freeman"
-authors = [{name = "rubbie kelvin", email = "dev.rubbie@gmail.com"}]
+[tool.poetry]
+name = "django-freeman"
+version = "0.1.0"
+description = "Collections of functions and helpers that helps speed up development of your django project"
+authors = ["rubbiekelvin <rubbiekelvinvoltsman@gmail.com>"]
+license = "MIT"
 readme = "README.md"
-license = {file = "LICENSE"}
-classifiers = ["License :: OSI Approved :: MIT License"]
-dynamic = ["version", "description"]
+packages = [{include = "freeman"}]
 
-[project.urls]
-Home = "https://github.com/rubbieKelvin/django-freeman"
+[tool.poetry.dependencies]
+python = "^3.10"
+django = "^4.2"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.3.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

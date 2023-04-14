@@ -12,7 +12,7 @@ class Rule:
     def validate(self, other: typing.Any) -> None:
         pass
 
-    def toJson(self) -> dict[str, typing.Any]:
+    def toDict(self) -> dict[str, typing.Any]:
         return {"name": self.name, "nullable": self.nullable, "type": "base"}
 
 
@@ -60,7 +60,7 @@ class String(Rule):
         self.allow_lowercase = allow_lowercase
         self.pattern = pattern
 
-    def toJson(self) -> dict[str, typing.Any]:
+    def toDict(self) -> dict[str, typing.Any]:
         return {
             "type": "string",
             "name": self.name,
@@ -162,7 +162,7 @@ class Number(Rule):
         self.validators = validators or []
         self.integer_only = integer_only
 
-    def toJson(self) -> dict[str, typing.Any]:
+    def toDict(self) -> dict[str, typing.Any]:
         return {
             "type": "number",
             "name": self.name,
@@ -226,7 +226,7 @@ class Boolean(Rule):
     ) -> None:
         super().__init__(_name=_name, nullable=nullable)
 
-    def toJson(self) -> dict[str, typing.Any]:
+    def toDict(self) -> dict[str, typing.Any]:
         return {"type": "boolean", "name": self.name, "nullable": self.nullable}
 
     def validate(self, other: bool | None) -> None:
@@ -278,10 +278,10 @@ class Dictionary(Rule):
         self.min_length = min_length
         self.max_length = max_length
 
-    def toJson(self) -> dict[str, typing.Any]:
+    def toDict(self) -> dict[str, typing.Any]:
         return {
             "type": "dictionary",
-            "rules": {key: rule.toJson() for key, rule in self.rules.items()},
+            "rules": {key: rule.toDict() for key, rule in self.rules.items()},
             "name": self.name,
             "nullable": self.nullable,
             "allow_unknown_keys": self.allow_unknown_keys,
@@ -331,6 +331,48 @@ class Dictionary(Rule):
             for key, rule in self.rules.items():
                 rule.name = f"{self.name}.{key}"
                 rule.validate(other.get(key))
+
+
+class StructuredInput(Rule):
+    """
+    A class for creating structured input objects to handle input data.
+
+    Attributes:
+        None
+
+    Methods:
+        validate(input_dict: dict[str, typing.Any]) -> None:
+            Validates input data against the rules defined in the class.
+
+    Example usage:
+        class MyInput(StructuredInput):
+            name = String()
+            age = Int()
+
+        input_dict = {'name': 'John Doe', 'age': 25}
+        MyInput.validate(input_dict)
+    """
+
+    @classmethod
+    def validate(cls, input_dict: dict[str, typing.Any]) -> None:
+        """
+        Validates input data against the rules defined in the class.
+
+        Args:
+            input_dict (dict[str, typing.Any]): A dictionary containing the input data to be validated.
+
+        Raises:
+            ValueError: If any of the input data violates the validation rules defined in the class.
+
+        Returns:
+            None
+        """
+        for field_name, field in cls.__dict__.items():
+            if isinstance(field, Rule):
+                try:
+                    field.validate(input_dict.get(field_name))
+                except ValueError as e:
+                    raise ValueError(f"{field_name}: {str(e)}")
 
 
 class List(Rule):
@@ -383,10 +425,10 @@ class List(Rule):
         self.min_length = min_length
         self.max_length = max_length
 
-    def toJson(self) -> dict[str, typing.Any]:
+    def toDict(self) -> dict[str, typing.Any]:
         return {
             "type": "list",
-            "element_rule": self.element_rule.toJson(),
+            "element_rule": self.element_rule.toDict(),
             "name": self.name,
             "nullable": self.nullable,
             "min_length": self.min_length,
@@ -461,10 +503,10 @@ class Any(Rule):
             len(self.rules) > 1 or len(self.rules) == 0
         ), "Two rules, or None are required to use this class"
 
-    def toJson(self) -> dict[str, typing.Any]:
+    def toDict(self) -> dict[str, typing.Any]:
         return {
             "type": "any",
-            "rules": [rule.toJson() for rule in self.rules],
+            "rules": [rule.toDict() for rule in self.rules],
             "name": self.name,
             "nullable": self.nullable,
         }
@@ -493,6 +535,30 @@ class Any(Rule):
 
 
 class Model(Rule):
+    """
+    A validation rule that checks if a value exists and is unique within a Django model field.
+
+    Parameters:
+    - model (type[models.Model]): The Django model to check.
+    - field (str): The name of the model field to check.
+    - name (str, optional): The name of the value being validated. Default is "value".
+    - nullable (bool, optional): Whether the value can be None. Default is False.
+    - filter (dict[str, Any], optional): A dictionary of additional filters to apply to the query. Default is None.
+
+    Example usage:
+    ```
+    from django.contrib.auth.models import User
+    from validator import Model
+
+    class CreateUserSerializer(serializers.ModelSerializer):
+        username = serializers.CharField(validators=[Model(User, "username")])
+
+        class Meta:
+            model = User
+            fields = ["username", "password"]
+    ```
+    """
+
     def __init__(
         self,
         model: type[models.Model],
@@ -506,7 +572,7 @@ class Model(Rule):
         self.field = field
         self.filter = filter
 
-    def toJson(self) -> dict[str, typing.Any]:
+    def toDict(self) -> dict[str, typing.Any]:
         return {
             "type": "django.db.models.Model",
             "model": self.model._meta.label_lower,
@@ -555,5 +621,5 @@ class NonNull(Rule):
         if other is None:
             raise ValueError(f"{self.name} should not be None.")
 
-    def toJson(self) -> dict[str, typing.Any]:
+    def toDict(self) -> dict[str, typing.Any]:
         return {"type": "not-null", "name": self.name}
