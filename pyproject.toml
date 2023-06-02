@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "django-freeman"
-version = "0.1.0"
+version = "0.1.1"
 description = "Collections of functions and helpers that helps speed up development of your django project"
 authors = ["rubbiekelvin <rubbiekelvinvoltsman@gmail.com>"]
 license = "MIT"
