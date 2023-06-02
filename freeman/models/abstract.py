@@ -11,11 +11,6 @@ class AbstractSharedModel(models.Model):
     date_created = models.DateTimeField(auto_now_add=True, editable=False)
     last_updated = models.DateTimeField(auto_now_add=True, editable=False)
 
-    USE_GET_FUNCTIONS = True
-    USE_INSERT_FUNCTIONS = True
-    USE_UPDATE_FUNCTIONS = True
-    USE_DELETE_FUNCTIONS = True
-
     class Meta:
         abstract = True
 

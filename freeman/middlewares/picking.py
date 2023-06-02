@@ -2,9 +2,10 @@ import json
 import typing
 from django.http import HttpResponse, HttpRequest
 from freeman.utils.picking import pick
-from django.conf import settings
+# from django.conf import settings
 
-FREEMAN_PICK_PARAM_NAME = getattr(settings, "FREEMAN_PICK_PARAM_NAME", "pick")
+# FREEMAN_PICK_PARAM_NAME = getattr(settings, "FREEMAN_PICK_PARAM_NAME", "pick")
+FREEMAN_PICK_PARAM_NAME = "pick"
 
 
 class FreemanPickMiddleware:

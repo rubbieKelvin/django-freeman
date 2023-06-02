@@ -17,9 +17,9 @@
 
 import typing
 from functools import reduce
+from .funcache import cached
 from django.db.models import Q
 from collections.abc import Sequence
-
 
 ConjunctionTypes: typing.TypeAlias = (
     typing.Literal["_or"] | typing.Literal["_and"] | typing.Literal["_not"]
@@ -102,7 +102,7 @@ class QueryStructureError(BaseException):
 
 
 # make query func
-# TODO: cache function
+@cached()
 def makeQuery(query: dict[str, typing.Any], **kwargs: str) -> Q:
     # Get parent field name, if any
     parent: str = kwargs.get("parent", "")
