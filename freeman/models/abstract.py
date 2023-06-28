@@ -1,7 +1,6 @@
 import uuid
 import typing
-from .types import Pk
-from .types import PartialUpdateType
+from . import types
 from django.db import models, transaction
 from freeman.utils.dsa import DotDict
 
@@ -14,7 +13,8 @@ class AbstractSharedModel(models.Model):
     class Meta:
         abstract = True
 
-    def serialize(self) -> DotDict:
+    @classmethod
+    def serialize(cls) -> DotDict | dict[str, types.JSONableType]:
         """
         Turns a model into a JSON serializable data. Must be overridden by the subclass.
 
@@ -27,7 +27,7 @@ class AbstractSharedModel(models.Model):
                 "last_updated": self.last_updated
             })
         """
-        raise NotImplementedError
+        return DotDict({"id": cls.id})
 
     @classmethod
     def all(cls) -> models.manager.BaseManager[typing.Self]:
@@ -40,7 +40,7 @@ class AbstractSharedModel(models.Model):
         return cls.objects.all()
 
     @classmethod
-    def findOneByPk(cls, pk: Pk) -> typing.Self:
+    def findOneByPk(cls, pk: types.Pk) -> typing.Self:
         """
         Retrieves a single instance of the subclass by primary key.
 
@@ -96,9 +96,7 @@ class AbstractSharedModel(models.Model):
         return res
 
     @classmethod
-    def insertSingle(
-        cls, objectData: dict[str, typing.Any]
-    ) -> typing.Self:
+    def insertSingle(cls, objectData: dict[str, typing.Any]) -> typing.Self:
         """
         Inserts a single object into the database table.
 
@@ -113,9 +111,7 @@ class AbstractSharedModel(models.Model):
         return instance
 
     @classmethod
-    def insertMany(
-        cls, objects: list[dict[str, typing.Any]]
-    ) -> list[typing.Self]:
+    def insertMany(cls, objects: list[dict[str, typing.Any]]) -> list[typing.Self]:
         """
         Inserts multiple objects into the database table.
 
@@ -130,7 +126,7 @@ class AbstractSharedModel(models.Model):
         return cls.objects.bulk_create(instances)
 
     @classmethod
-    def updateOne(cls, pk: Pk, _set: dict[str, typing.Any]) -> typing.Self:
+    def updateOne(cls, pk: types.Pk, _set: dict[str, typing.Any]) -> typing.Self:
         """
         Updates a single instance of the subclass that matches the given primary key with the specified fields.
 
@@ -175,7 +171,7 @@ class AbstractSharedModel(models.Model):
         return cls.objects.filter(where).update(**_set)
 
     @classmethod
-    def updateMany(cls, objects: list[PartialUpdateType]) -> list[typing.Self]:
+    def updateMany(cls, objects: list[types.PartialUpdateType]) -> list[typing.Self]:
         """Updates multiple objects with new values atomically. If one of the updates fail, all updates are rolled back.
 
         Args:
@@ -186,12 +182,17 @@ class AbstractSharedModel(models.Model):
         """
 
         with transaction.atomic():
-            updated_objects = []
+            updated_objects: list[typing.Self] = []
+
             for obj in objects:
                 pk = obj["pk"]
                 _set = obj["_set"]
                 try:
-                    updated_object = cls.objects.filter(pk=pk).update(**_set)
+                    updated_object = cls.objects.get(pk=pk)
+
+                    for key, value in _set.items():
+                        setattr(updated_object, key, value)
+
                     updated_objects.append(updated_object)
                 except Exception as e:
                     # Rollback the transaction if an update fails
@@ -200,7 +201,7 @@ class AbstractSharedModel(models.Model):
         return updated_objects
 
     @classmethod
-    def deleteOne(cls, pk: Pk) -> None:
+    def deleteOne(cls, pk: types.Pk) -> None:
         """
         Deletes an instance of the subclass with the given primary key.
 
