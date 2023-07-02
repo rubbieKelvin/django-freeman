@@ -2,9 +2,9 @@ import types
 from django.apps import AppConfig
 
 
-class AuthConfig(AppConfig):
+class AuthappConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "freeman.auth"
+    name = "freeman.authapp"
 
     def __init__(self, app_name: str, app_module: types.ModuleType | None) -> None:
         self.signals_initialized = False

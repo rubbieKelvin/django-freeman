@@ -31,7 +31,7 @@ class FreemanAuthentication(BaseAuthentication):
         if prefix != self.PREFIX:
             raise exceptions.AuthenticationFailed("Invalid token header prefix")
 
-        if len(token) > 62:
+        if len(token) != 62:
             raise exceptions.AuthenticationFailed(
                 "Invalid token header. No credentials provided."
             )

@@ -37,7 +37,8 @@ class FreemanPickMiddleware:
 
         response = self.get_response(request)
 
-        if response["Content-Type"] != "application/json":
+        contentType = response.get("Content-Type", response.get("content-type"))
+        if contentType != "application/json":
             return response
 
         data = json.loads(response.content)
